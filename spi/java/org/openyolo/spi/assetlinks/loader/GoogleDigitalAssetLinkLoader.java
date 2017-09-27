@@ -115,7 +115,7 @@ public class GoogleDigitalAssetLinkLoader implements DigitalAssetLinkLoader {
 
             queryUriBuilder.appendQueryParameter(
                     "source.androidApp.certificate.sha256Fingerprint",
-                    FingerprintConverter.base64ToHex(domain.getAndroidFingerprint()));
+                    FingerprintConverter.bytesToHex(domain.getAndroidFingerprintBytes()));
         }
 
         String queryUriString = queryUriBuilder.build().toString();

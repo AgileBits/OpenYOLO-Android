@@ -53,7 +53,10 @@ public final class FingerprintConverter {
      */
     public static String base64ToHex(String base64) {
         byte[] bytes = Base64.decode(base64.getBytes(Charset.forName("UTF-8")), Base64.URL_SAFE);
+        return bytesToHex(bytes);
+    }
 
+    public static String bytesToHex(byte[] bytes) {
         StringBuilder hexStr = new StringBuilder();
         for (int pos = 0; pos < bytes.length; pos++) {
             String hex = Integer.toHexString(bytes[pos] & UNSIGNED_BYTE_MASK)
