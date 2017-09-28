@@ -32,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.openyolo.protocol.AuthenticationDomain;
 import org.openyolo.spi.assetlinks.loader.DigitalAssetLinkLoader;
+import org.openyolo.spi.assetlinks.loader.DirectWebDigitalAssetLinkLoader;
 import org.openyolo.spi.internal.Clock;
 import org.openyolo.spi.internal.DefaultClock;
 
@@ -50,7 +51,9 @@ public class AssetRelationshipCache {
      */
     public static final long RECOMMENDED_CACHE_DURATION = TimeUnit.DAYS.toMillis(1);
 
-    private final DigitalAssetLinkLoader mLoader;
+    private final DigitalAssetLinkLoader mAppLoader;
+    private final DigitalAssetLinkLoader mWebLoader;
+
     private final HashMap<RelationSource, RetrievedRelations> mRelations;
     private final Clock mClock;
     private final long mCacheDurationMs;
@@ -60,20 +63,24 @@ public class AssetRelationshipCache {
      * duration.
      */
     public AssetRelationshipCache(
-            @NonNull DigitalAssetLinkLoader loader,
+            @NonNull DigitalAssetLinkLoader appLoader,
+            @NonNull DigitalAssetLinkLoader webLoader,
             long cacheDurationMs) {
-        this(loader, cacheDurationMs, DefaultClock.INSTANCE);
+        this(appLoader, webLoader, cacheDurationMs, DefaultClock.INSTANCE);
     }
 
     @VisibleForTesting
     AssetRelationshipCache(
-            @NonNull DigitalAssetLinkLoader loader,
+            @NonNull DigitalAssetLinkLoader appLoader,
+            @NonNull DigitalAssetLinkLoader webLoader,
             long cacheDurationMs,
             @NonNull Clock clock) {
-        require(loader, notNullValue());
+        require(appLoader, notNullValue());
+        require(webLoader, notNullValue());
         require(clock, notNullValue());
 
-        mLoader = loader;
+        mAppLoader = appLoader;
+        mWebLoader = webLoader;
         mRelations = new HashMap<>();
         mClock = clock;
         mCacheDurationMs = cacheDurationMs;
@@ -95,6 +102,7 @@ public class AssetRelationshipCache {
         Set<AuthenticationDomain> sourceRelations = getRelations(source, relationType);
 
         for (AuthenticationDomain target : sourceRelations) {
+            android.util.Log.d("DAL_TAG", "Comparing target: " + target.toString());
             Set<AuthenticationDomain> targetRelations = getRelations(target, relationType);
             if (targetRelations.contains(source)) {
                 bidiRelations.add(target);
@@ -118,7 +126,9 @@ public class AssetRelationshipCache {
 
         RetrievedRelations retrievedRelations = mRelations.get(relationSource);
         if (retrievedRelations == null || retrievedRelations.expiryTime < mClock.getCurrentTime()) {
-            Set<AuthenticationDomain> relations = mLoader.getRelations(relationType, source);
+            Set<AuthenticationDomain> relations = new HashSet<>();
+            relations.addAll(mAppLoader.getRelations(relationType, source));
+            relations.addAll(mWebLoader.getRelations(relationType, source));
             long expiry = mClock.getCurrentTime() + mCacheDurationMs;
             retrievedRelations = new RetrievedRelations(relations, expiry);
             mRelations.put(relationSource, retrievedRelations);

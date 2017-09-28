@@ -73,7 +73,7 @@ public final class AuthenticationDomain implements Comparable<AuthenticationDoma
      * The separator character used between the fingerprint algorithm and the Base64 encoded
      * fingerprint bytes in an Android authentication domain.
      */
-    public static final String FINGERPRINT_ALGO_SEPARATOR = "~";
+    public static final String FINGERPRINT_ALGO_SEPARATOR = ":";
 
     private static final String TAG = "AuthenticationDomain";
 
@@ -128,7 +128,7 @@ public final class AuthenticationDomain implements Comparable<AuthenticationDoma
     public static AuthenticationDomain fromPackageName(
             @NonNull Context context,
             @NonNull String packageName) {
-        return fromPackageName(context, packageName, SHA_512_FINGERPRINT);
+        return fromPackageName(context, packageName, SHA_256_FINGERPRINT);
     }
 
     /**

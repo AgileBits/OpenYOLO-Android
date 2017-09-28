@@ -34,7 +34,7 @@ class StreamReader {
             // read the whole file into a string, using a Scanner trick
             scanner = new Scanner(stream);
             scanner.useDelimiter("\\Z");
-            return scanner.next();
+            return scanner.hasNext() ? scanner.next() : "";
         } finally {
             if (scanner != null) {
                 scanner.close();

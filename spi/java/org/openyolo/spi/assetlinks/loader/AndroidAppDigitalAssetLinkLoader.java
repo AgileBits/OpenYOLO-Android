@@ -48,13 +48,10 @@ public class AndroidAppDigitalAssetLinkLoader implements DigitalAssetLinkLoader 
     @Override
     public Set<AuthenticationDomain> getRelations(String relationType, AuthenticationDomain domain)
             throws IOException {
-        if (!domain.isAndroidAuthDomain()) {
-            throw new IllegalArgumentException(
-                    "AndroidAppDigitalAssetLinkLoader only supports Android "
-                            + "authentication domains");
-        }
 
-        checkAppFingerprint(domain);
+        if (!domain.isAndroidAuthDomain() || !isAppInstalledWithMatchingFingerprint(domain)) {
+            return Collections.emptySet();
+        }
 
         String packageName = domain.getAndroidPackageName();
         ApplicationInfo applicationInfo;
@@ -90,16 +87,17 @@ public class AndroidAppDigitalAssetLinkLoader implements DigitalAssetLinkLoader 
         }
     }
 
-    private void checkAppFingerprint(AuthenticationDomain androidApp) throws IOException {
+    private boolean isAppInstalledWithMatchingFingerprint(AuthenticationDomain androidApp) {
         AuthenticationDomain appDomain =
                 AuthenticationDomain.fromPackageName(
                         mApplicationContext,
                         androidApp.getAndroidPackageName());
 
-        // TODO: generate fingerprint for isntalled app using same fingerprint algorithm as provided
-        // in androidApp
-        if (!androidApp.equals(appDomain)) {
-            throw new IOException("Installed application does not match domain: " + androidApp);
+        // TODO: generate fingerprint for installed app using same fingerprint algorithm as provided
+        if (androidApp.equals(appDomain)) {
+            return true;
         }
+
+        return false;
     }
 }

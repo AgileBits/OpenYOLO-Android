@@ -14,8 +14,10 @@
 
 package org.openyolo.spi.assetlinks.loader;
 
+import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,6 +38,7 @@ public class AssetRelationReader {
     private static final int EXPECTED_SHA_256_FINGERPRINT_LENGTH = 95;
 
     private static final String ANDROID_NAMESPACE = "android";
+    private static final String ANDROID_APP_NAMESPACE = "android_app";
     private static final String WEB_NAMESPACE = "web";
 
     /**
@@ -44,26 +47,31 @@ public class AssetRelationReader {
      *
      * @throws JSONException if the JSON is malformed.
      */
-    public static Set<AuthenticationDomain> getRelations(String assetLinksJson, String relationType)
-            throws JSONException {
+    public static Set<AuthenticationDomain> getRelations(String assetLinksJson, String relationType) throws JSONException, IOException {
+
         Set<AuthenticationDomain> targets = new HashSet<>();
         JSONArray relationArray = new JSONArray(assetLinksJson);
 
         for (int i = 0; i < relationArray.length(); i++) {
             JSONObject relation = relationArray.getJSONObject(i);
-            JSONArray relationTypes = relation.getJSONArray("relation");
-            if (!contains(relationTypes, relationType)) {
-                continue;
+            String includeWebDomain = relation.optString("include");
+            JSONArray relationTypes = relation.optJSONArray("relation");
+
+            if (!TextUtils.isEmpty(includeWebDomain)) {
+                DirectWebDigitalAssetLinkLoader webLoader = new DirectWebDigitalAssetLinkLoader();
+                targets.addAll(webLoader.getRelations(relationType, includeWebDomain));
             }
 
-            JSONObject target = relation.getJSONObject("target");
-            String namespace = target.getString("namespace");
-            if (ANDROID_NAMESPACE.equals(namespace)) {
-                targets.add(readAndroidTarget(target));
-            } else if (WEB_NAMESPACE.equals(namespace)) {
-                targets.add(readWebTarget(target));
-            } else {
-                Log.w(TAG, "Unknown namespace \"" + namespace + "\" for statement: " + relation);
+            if (relationTypes != null && contains(relationTypes, relationType)) {
+                JSONObject target = relation.getJSONObject("target");
+                String namespace = target.getString("namespace");
+                if (ANDROID_NAMESPACE.equals(namespace) || ANDROID_APP_NAMESPACE.equals(namespace)) {
+                    targets.add(readAndroidTarget(target));
+                } else if (WEB_NAMESPACE.equals(namespace)) {
+                    targets.add(readWebTarget(target));
+                } else {
+                    Log.w(TAG, "Unknown namespace \"" + namespace + "\" for statement: " + relation);
+                }
             }
         }
 

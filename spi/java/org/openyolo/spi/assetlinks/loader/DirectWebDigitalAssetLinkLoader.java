@@ -14,9 +14,12 @@
 
 package org.openyolo.spi.assetlinks.loader;
 
+import android.net.Uri;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Set;
 
 import org.json.JSONException;
@@ -28,19 +31,41 @@ import org.openyolo.protocol.AuthenticationDomain;
  */
 public class DirectWebDigitalAssetLinkLoader implements DigitalAssetLinkLoader {
 
+    private static final String SCHEME_HTTP = "http";
+    private static final String SCHEME_HTTPS = "https";
+    private static final String ASSET_LINKS_PATH = "/.well-known/assetlinks.json";
+
     @Override
     public Set<AuthenticationDomain> getRelations(
             String relationType,
             AuthenticationDomain domain)
             throws IOException {
 
+        return getRelations(relationType, domain.toString());
+    }
+
+    public Set<AuthenticationDomain> getRelations(
+            String relationType,
+            String webDomain)
+            throws IOException {
+
+        //TODO: Remove this method and require AuthDomain.
+
         String assetLinksDeclaration;
-        if (!domain.isWebAuthDomain()) {
-            throw new IllegalArgumentException("WebDigitalAssetLinkLoader only supports "
-                    + "loading relations for web authentication domains");
+
+        Uri parsedUri = Uri.parse(webDomain);
+
+        if (!isWebDomain(parsedUri)) {
+            return Collections.emptySet();
         }
 
-        assetLinksDeclaration = loadFromWeb(domain.toString());
+        //TODO: We should only add the .json when this method recieves only a domain. For 'include' statements from
+        // the manifest, it should already point to a json path (not exactly in this path)
+        if (!ASSET_LINKS_PATH.equals(parsedUri.getPath())) {
+            webDomain = webDomain + ASSET_LINKS_PATH;
+        }
+
+        assetLinksDeclaration = loadFromWeb(webDomain);
 
         try {
             return AssetRelationReader.getRelations(assetLinksDeclaration, relationType);
@@ -52,5 +77,9 @@ public class DirectWebDigitalAssetLinkLoader implements DigitalAssetLinkLoader {
     private String loadFromWeb(String webDomain) throws IOException {
         InputStream stream = new URL(webDomain).openStream();
         return StreamReader.readAll(stream);
+    }
+
+    private boolean isWebDomain(Uri parsedUri) {
+        return SCHEME_HTTP.equals(parsedUri.getScheme()) || SCHEME_HTTPS.equals(parsedUri.getScheme());
     }
 }
