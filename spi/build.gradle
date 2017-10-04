@@ -14,6 +14,7 @@ android {
         buildConfigField('String', 'spiVersionMinor', rootProject.ext.versionMinor)
         buildConfigField('String', 'spiVersionPatch', rootProject.ext.versionPatch)
     }
+    buildToolsVersion '26.0.2'
 }
 
 dependencies {

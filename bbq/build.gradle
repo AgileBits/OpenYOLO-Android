@@ -16,6 +16,7 @@ android {
         buildConfigField('String', 'bbqVersionMinor', '' + rootProject.ext.versionMinor)
         buildConfigField('String', 'bbqVersionPatch', '' + rootProject.ext.versionPatch)
     }
+    buildToolsVersion '26.0.2'
 }
 
 dependencies {

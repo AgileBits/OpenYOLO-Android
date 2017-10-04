@@ -16,6 +16,7 @@ android {
         buildConfigField('String', 'clientVersionMinor', rootProject.ext.versionMinor)
         buildConfigField('String', 'clientVersionPatch', rootProject.ext.versionPatch)
     }
+    buildToolsVersion '26.0.2'
 }
 
 dependencies {
